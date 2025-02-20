@@ -12,9 +12,11 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, root_mean_s
 pd.options.display.max_columns = None
 
 
-data = pd.read_excel(r"C:\Users\\Classic Models Sales.xlsx")
+data = pd.read_excel(
+    r"C:\Users\\Classic Models Sales.xlsx")
 
-data.info()
+# Removing Columns i wont be using for analysis and setting date as an index.
+# Important to check if date has datatype as datetime
 data['orderdate'] = pd.to_datetime(data['orderdate'])
 data.set_index('orderdate', inplace=True)
 data = data.drop(['ordernumber', 'productName', 'productLine', 'customerName',
@@ -22,8 +24,8 @@ data = data.drop(['ordernumber', 'productName', 'productLine', 'customerName',
                   'employee_first_name', 'employee_last_name', 'buyPrice', 'priceEach',
                   'QuantityOrdered', 'cost_of_sales'], axis=1, inplace=False)
 
-
-# View
+data.info()
+# Basic Intial View
 plt.figure(figsize=(10, 5), dpi=100)
 plt.plot(data.index, data['sales_value'])
 plt.title('Classic Cars Sales (2003-2005)')
@@ -42,7 +44,6 @@ plt.ylabel('Sales Amount')
 # Checking for stationarity:
 # ADF Test
 adf_test = adfuller(monthly_sales)
-print('ADF Statistic:', adf_test[0])
 if adf_test[1] <= 0.05:
     print('\nSeries is Stationary')
 else:
@@ -91,19 +92,17 @@ sarima_model = SARIMAX(monthly_sales, order=(
     1, 0, 1), seasonal_order=(1, 1, 1, 12))
 
 sarima_result = sarima_model.fit()
-print(sarima_result.summary())
-
+sarima_result.summary()
 sarima_result.plot_diagnostics(figsize=(12, 6))
-plt.show()
 
 
 # Forecasting:
 
-forecast = sarima_result.forecast(steps=12)
+forecast = sarima_result.get_forecast(steps=12)
 forecast_index = pd.date_range(
     start=monthly_sales.index[-1], periods=12, freq='ME')
-forecast_series = pd.Series(forecast.predicted_mean, index=forecast_index)
-
+forecast_series = forecast.predicted_mean
+forecast_series.index = forecast_index
 
 plt.figure(figsize=(16, 12))
 plt.plot(monthly_sales, label='Historical Sales')
